@@ -1,59 +1,534 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Video Player</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dhurandhar – The Revenge 2026 || Hiroshi </title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap');
 
-  <style>
-    body {
-      background: #0f0f0f;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-      font-family: Arial;
-      color: white;
-    }
+  :root {
+    --gold: #c9a84c;
+    --gold-dim: #7a5e22;
+    --bg: #080808;
+    --surface: #111111;
+    --red: #b52b2b;
+    --text: #e8dcc8;
+    --muted: #5a5040;
+  }
 
-    .player {
-      width: 900px;
-      max-width: 95%;
-      background: black;
-      border-radius: 12px;
-      overflow: hidden;
-    }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    video {
-      width: 100%;
-    }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Crimson Pro', Georgia, serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    overflow-x: hidden;
+  }
 
-    .credit {
-      margin-top: 10px;
-      font-size: 14px;
-      opacity: 0.7;
-    }
+  /* Cinematic grain overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.35;
+  }
 
-    .credit span {
-      color: #ff3c3c;
-      font-weight: bold;
-    }
-  </style>
+  .wrapper {
+    width: 100%;
+    max-width: 960px;
+    animation: fadeIn 1s ease forwards;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--gold-dim);
+    position: relative;
+  }
+  .header::after {
+    content: '';
+    position: absolute;
+    bottom: -3px;
+    left: 0;
+    width: 80px;
+    height: 2px;
+    background: var(--gold);
+  }
+  .label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--gold);
+    text-transform: uppercase;
+  }
+  .title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(2rem, 5vw, 3.4rem);
+    letter-spacing: 2px;
+    color: var(--text);
+    line-height: 1;
+  }
+  .title span { color: var(--gold); }
+  .meta {
+    font-size: 0.85rem;
+    color: var(--muted);
+    font-style: italic;
+    margin-top: 4px;
+  }
+
+  /* Player shell */
+  .player-shell {
+    position: relative;
+    width: 100%;
+    background: #000;
+    border: 1px solid #222;
+    box-shadow: 0 0 60px rgba(0,0,0,0.9), 0 0 0 1px var(--gold-dim);
+    overflow: hidden;
+  }
+
+  .player-shell::before {
+    content: '';
+    display: block;
+    padding-top: 56.25%; /* 16:9 */
+  }
+
+  video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: #000;
+    cursor: pointer;
+  }
+
+  /* Custom overlay controls */
+  .overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 45%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+  .player-shell:hover .overlay,
+  .player-shell.paused .overlay {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  /* Big play button */
+  .play-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+  .play-center-btn {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: rgba(201,168,76,0.15);
+    border: 2px solid var(--gold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transform: scale(0.8);
+    transition: opacity 0.3s, transform 0.3s;
+    pointer-events: all;
+    cursor: pointer;
+    backdrop-filter: blur(4px);
+  }
+  .player-shell.paused .play-center-btn {
+    opacity: 1;
+    transform: scale(1);
+  }
+  .play-center-btn svg { margin-left: 5px; }
+
+  /* Controls bar */
+  .controls {
+    padding: 10px 14px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  /* Progress bar */
+  .progress-wrap {
+    width: 100%;
+    height: 3px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 2px;
+    cursor: pointer;
+    position: relative;
+    transition: height 0.2s;
+  }
+  .progress-wrap:hover { height: 5px; }
+  .progress-fill {
+    height: 100%;
+    background: var(--gold);
+    border-radius: 2px;
+    width: 0%;
+    pointer-events: none;
+    position: relative;
+  }
+  .progress-fill::after {
+    content: '';
+    position: absolute;
+    right: -5px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--gold);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .progress-wrap:hover .progress-fill::after { opacity: 1; }
+
+  /* Bottom row */
+  .ctrl-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .ctrl-btn {
+    background: none;
+    border: none;
+    color: var(--text);
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.8;
+    transition: opacity 0.2s, color 0.2s;
+    flex-shrink: 0;
+  }
+  .ctrl-btn:hover { opacity: 1; color: var(--gold); }
+
+  .time-display {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 13px;
+    letter-spacing: 1px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .time-display span { color: var(--text); }
+
+  .spacer { flex: 1; }
+
+  /* Volume slider */
+  .volume-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 70px;
+    height: 3px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--gold);
+    cursor: pointer;
+  }
+
+  /* Quality badge */
+  .badge {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 11px;
+    letter-spacing: 2px;
+    padding: 2px 7px;
+    border: 1px solid var(--gold-dim);
+    color: var(--gold);
+    border-radius: 2px;
+  }
+
+  /* Loading spinner */
+  .spinner {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.7);
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+  }
+  .spinner.active { opacity: 1; }
+  .spinner-ring {
+    width: 44px;
+    height: 44px;
+    border: 2px solid rgba(201,168,76,0.2);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Footer */
+  .footer {
+    margin-top: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.78rem;
+    color: var(--muted);
+    font-style: italic;
+  }
+  .footer a {
+    color: var(--gold-dim);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .footer a:hover { color: var(--gold); }
+
+  /* Fullscreen fix */
+  video::-webkit-media-controls { display: none !important; }
+</style>
 </head>
-
 <body>
 
-<div class="player">
-  <video controls>
-    <source src="https://vcloud.zip/re.php?l=aHR0cHM6Ly81NTYxMzhkY2E3MzY3NzYzZWQ0NmVlY2FhNDI4NGVjYS5yMi5jbG91ZGZsYXJlc3RvcmFnZS5jb20vaHViMi9EaHVyYW5kaGFyJTIwVGhlJTIwUmV2ZW5nZSUyMDIwMjYlMjBIaW5kaSUyMEhEVEMlMjA3MjBwJTIweDI2NCUyMEFBQyUyMEhDLUVTdWItVmVnYW1vdmllcy5pcy5ta3Y/WC1BbXotQWxnb3JpdGhtPUFXUzQtSE1BQy1TSEEyNTYmWC1BbXotQ3JlZGVudGlhbD0yNmI2Y2Y4YTAzOTliNTg4MDY0M2Y1ODVjOGMzZGJlNSUyRjIwMjYwMzE5JTJGYXV0byUyRnMzJTJGYXdzNF9yZXF1ZXN0JlgtQW16LURhdGU9MjAyNjAzMTlUMTM1MjU5WiZYLUFtei1FeHBpcmVzPTEwODAwJlgtQW16LVNpZ25lZEhlYWRlcnM9aG9zdCZyZXNwb25zZS1jb250ZW50LWRpc3Bvc2l0aW9uPURodXJhbmRoYXIlMjBUaGUlMjBSZXZlbmdlJTIwMjAyNiUyMEhpbmRpJTIwSERUQyUyMDcyMHAlMjB4MjY0JTIwQUFDJTIwSEMtRVN1Yi1WZWdhbW92aWVzLmlzLm1rdiZYLUFtei1TaWduYXR1cmU9MTYyMTYyNzRiM2YxNTkzZTQ2MDE0NGFiODk1ODE1NTk5MTYzNWYyZGQ0M2I5MzU4ZWIyN2NmZjM5NGMxYjAyNw==" type="video/mp4">
-    Your browser does not support video.
-  </video>
+<div class="wrapper">
+  <div class="header">
+    <span class="label">Now Streaming · Hindi HDTC · 720p</span>
+    <h1 class="title">Dhurandhar <span>·</span> The Revenge <span>2026</span></h1>
+    <p class="meta">HC-ESub · x264 · AAC · VegaMovies</p>
+  </div>
+
+  <div class="player-shell paused" id="playerShell">
+    <video id="vid" preload="metadata"
+      src="https://vcloud.zip/re.php?l=aHR0cHM6Ly81NTYxMzhkY2E3MzY3NzYzZWQ0NmVlY2FhNDI4NGVjYS5yMi5jbG91ZGZsYXJlc3RvcmFnZS5jb20vaHViMi9EaHVyYW5kaGFyJTIwVGhlJTIwUmV2ZW5nZSUyMDIwMjYlMjBIaW5kaSUyMEhEVEMlMjA3MjBwJTIweDI2NCUyMEFBQyUyMEhDLUVTdWItVmVnYW1vdmllcy5pcy5ta3Y/WC1BbXotQWxnb3JpdGhtPUFXUzQtSE1BQy1TSEEyNTYmWC1BbXotQ3JlZGVudGlhbD0yNmI2Y2Y4YTAzOTliNTg4MDY0M2Y1ODVjOGMzZGJlNSUyRjIwMjYwMzE5JTJGYXV0byUyRnMzJTJGYXdzNF9yZXF1ZXN0JlgtQW16LURhdGU9MjAyNjAzMTlUMTM1MjU5WiZYLUFtei1FeHBpcmVzPTEwODAwJlgtQW16LVNpZ25lZEhlYWRlcnM9aG9zdCZyZXNwb25zZS1jb250ZW50LWRpc3Bvc2l0aW9uPURodXJhbmRoYXIlMjBUaGUlMjBSZXZlbmdlJTIwMjAyNiUyMEhpbmRpJTIwSERUQyUyMDcyMHAlMjB4MjY0JTIwQUFDJTIwSEMtRVN1Yi1WZWdhbW92aWVzLmlzLm1rdiZYLUFtei1TaWduYXR1cmU9MTYyMTYyNzRiM2YxNTkzZTQ2MDE0NGFiODk1ODE1NTk5MTYzNWYyZGQ0M2I5MzU4ZWIyN2NmZjM5NGMxYjAyNw==">
+    </video>
+
+    <!-- Grain + vignette -->
+    <div style="position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 50%,rgba(0,0,0,0.55) 100%);z-index:1;"></div>
+
+    <!-- Loading spinner -->
+    <div class="spinner" id="spinner">
+      <div class="spinner-ring"></div>
+    </div>
+
+    <!-- Big center play -->
+    <div class="play-center">
+      <button class="play-center-btn" id="centerBtn" title="Play">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="var(--gold)">
+          <polygon points="6,3 20,12 6,21"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Overlay controls -->
+    <div class="overlay" id="overlay">
+      <div class="controls">
+        <!-- Progress -->
+        <div class="progress-wrap" id="progressWrap">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <!-- Buttons row -->
+        <div class="ctrl-row">
+          <!-- Play/Pause -->
+          <button class="ctrl-btn" id="playBtn" title="Play / Pause">
+            <svg id="playIcon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="6,3 20,12 6,21"/>
+            </svg>
+          </button>
+
+          <!-- Skip back 10s -->
+          <button class="ctrl-btn" id="skipBack" title="Rewind 10s">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.44"/>
+              <text x="9" y="16" font-size="7" fill="currentColor" stroke="none" font-family="Bebas Neue,sans-serif">10</text>
+            </svg>
+          </button>
+
+          <!-- Skip fwd 10s -->
+          <button class="ctrl-btn" id="skipFwd" title="Forward 10s">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.49-3.44"/>
+              <text x="9" y="16" font-size="7" fill="currentColor" stroke="none" font-family="Bebas Neue,sans-serif">10</text>
+            </svg>
+          </button>
+
+          <!-- Time -->
+          <div class="time-display"><span id="currentTime">0:00</span> / <span id="duration">—</span></div>
+
+          <div class="spacer"></div>
+
+          <!-- Quality badge -->
+          <div class="badge">720p</div>
+
+          <!-- Volume -->
+          <div class="volume-wrap">
+            <button class="ctrl-btn" id="muteBtn" title="Mute">
+              <svg id="volIcon" width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M11 5L6 9H2v6h4l5 4V5zM19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+              </svg>
+            </button>
+            <input type="range" id="volSlider" min="0" max="1" step="0.05" value="1">
+          </div>
+
+          <!-- Fullscreen -->
+          <button class="ctrl-btn" id="fsBtn" title="Fullscreen">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/>
+              <line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>Use the controls to play, seek, and adjust volume.</span>
+    <span>Press <kbd style="font-style:normal;border:1px solid #333;padding:1px 5px;border-radius:3px;font-size:10px;">Space</kbd> to pause</span>
+  </div>
 </div>
 
-<div class="credit">
-  Made by <span>HIROSHI (Gourav)</span>
-</div>
+<script>
+const vid = document.getElementById('vid');
+const shell = document.getElementById('playerShell');
+const playBtn = document.getElementById('playBtn');
+const playIcon = document.getElementById('playIcon');
+const centerBtn = document.getElementById('centerBtn');
+const progressWrap = document.getElementById('progressWrap');
+const progressFill = document.getElementById('progressFill');
+const currentTimeEl = document.getElementById('currentTime');
+const durationEl = document.getElementById('duration');
+const volSlider = document.getElementById('volSlider');
+const muteBtn = document.getElementById('muteBtn');
+const volIcon = document.getElementById('volIcon');
+const fsBtn = document.getElementById('fsBtn');
+const skipBack = document.getElementById('skipBack');
+const skipFwd = document.getElementById('skipFwd');
+const spinner = document.getElementById('spinner');
 
+const PLAY_SVG = `<polygon points="6,3 20,12 6,21"/>`;
+const PAUSE_SVG = `<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>`;
+
+function togglePlay() {
+  if (vid.paused) { vid.play(); } else { vid.pause(); }
+}
+
+vid.addEventListener('play', () => {
+  playIcon.innerHTML = PAUSE_SVG;
+  shell.classList.remove('paused');
+});
+vid.addEventListener('pause', () => {
+  playIcon.innerHTML = PLAY_SVG;
+  shell.classList.add('paused');
+});
+
+playBtn.addEventListener('click', togglePlay);
+centerBtn.addEventListener('click', togglePlay);
+vid.addEventListener('click', togglePlay);
+
+// Time
+function formatTime(s) {
+  if (isNaN(s)) return '—';
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60).toString().padStart(2, '0');
+  return `${m}:${sec}`;
+}
+vid.addEventListener('timeupdate', () => {
+  const pct = vid.duration ? (vid.currentTime / vid.duration) * 100 : 0;
+  progressFill.style.width = pct + '%';
+  currentTimeEl.textContent = formatTime(vid.currentTime);
+});
+vid.addEventListener('loadedmetadata', () => {
+  durationEl.textContent = formatTime(vid.duration);
+});
+
+// Seek
+progressWrap.addEventListener('click', e => {
+  const rect = progressWrap.getBoundingClientRect();
+  const pct = (e.clientX - rect.left) / rect.width;
+  vid.currentTime = pct * vid.duration;
+});
+
+// Skip
+skipBack.addEventListener('click', () => vid.currentTime = Math.max(0, vid.currentTime - 10));
+skipFwd.addEventListener('click', () => vid.currentTime = Math.min(vid.duration, vid.currentTime + 10));
+
+// Volume
+volSlider.addEventListener('input', () => {
+  vid.volume = volSlider.value;
+  vid.muted = volSlider.value == 0;
+  updateVolIcon();
+});
+muteBtn.addEventListener('click', () => {
+  vid.muted = !vid.muted;
+  volSlider.value = vid.muted ? 0 : vid.volume;
+  updateVolIcon();
+});
+function updateVolIcon() {
+  if (vid.muted || vid.volume == 0) {
+    volIcon.innerHTML = `<path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>`;
+  } else {
+    volIcon.innerHTML = `<path d="M11 5L6 9H2v6h4l5 4V5zM19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>`;
+  }
+}
+
+// Fullscreen
+fsBtn.addEventListener('click', () => {
+  if (!document.fullscreenElement) {
+    shell.requestFullscreen && shell.requestFullscreen();
+  } else {
+    document.exitFullscreen && document.exitFullscreen();
+  }
+});
+
+// Spinner on buffering
+vid.addEventListener('waiting', () => spinner.classList.add('active'));
+vid.addEventListener('playing', () => spinner.classList.remove('active'));
+vid.addEventListener('canplay', () => spinner.classList.remove('active'));
+
+// Keyboard
+document.addEventListener('keydown', e => {
+  if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
+  if (e.code === 'ArrowRight') vid.currentTime += 10;
+  if (e.code === 'ArrowLeft') vid.currentTime -= 10;
+  if (e.code === 'ArrowUp') { vid.volume = Math.min(1, vid.volume + 0.1); volSlider.value = vid.volume; }
+  if (e.code === 'ArrowDown') { vid.volume = Math.max(0, vid.volume - 0.1); volSlider.value = vid.volume; }
+});
+</script>
 </body>
 </html>
